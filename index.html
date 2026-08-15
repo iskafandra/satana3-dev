@@ -462,10 +462,20 @@ box-shadow: none;
 .empty-msg {
 width: 100%;
 text-align: center;
-color: #999;
-font-style: italic;
 pointer-events: none;
-font-size: 0.9rem;
+}
+.empty-msg span {
+display: inline-block;
+position: relative;
+z-index: 3;
+background: #F3ECDF; /* = fondo de la zona: tapa la línea del alambre */
+padding: 4px 18px;
+color: #B3A994;
+font-family: 'Helvetica Neue', Arial, sans-serif;
+font-weight: 400;
+font-size: 0.72rem;
+text-transform: uppercase;
+letter-spacing: 2.5px;
 }
 /* --- Loading Overlay --- */
 .loading-overlay {
@@ -775,7 +785,7 @@ cursor:pointer;
 <button class="modal-close" onclick="toggleModal()">×</button>
 <div style="font-size: 1.2rem; color: var(--primary-orange); margin-bottom:15px;">Instrucciones</div>
 <div style="font-family:sans-serif; font-size:0.9rem; line-height:1.6; text-align: left; padding: 0 10px;">
-1- Personalizar tu pulsera<br>
+1- Personalizá/Seleccioná tu pulsera!<br>
 2- Presiona "Visualizar" para ver el diseño completo<br>
 3- Envía a <a href="https://instagram.com/Satana.IB" target="_blank" style="color: var(--primary-orange); font-weight:bold; text-decoration:none;">@Satana.IB</a> para realizar tu pedido!<br><br>
 <hr style="border:0; border-top:1px solid #ddd; margin: 15px 0;">
@@ -846,7 +856,7 @@ cursor:pointer;
 <div id="tab-personalizada" class="tab-content active">
 <section class="workspace-section" id="scroll-container">
 <div id="bracelet-zone">
-<div class="empty-msg" id="empty-text">Pulsera vacía</div>
+<div class="empty-msg" id="empty-text"><span>Pulsera vacía</span></div>
 </div>
 </section>
 <section class="catalog-section">
@@ -1137,7 +1147,7 @@ buyBtn.type = 'button';
 buyBtn.className = 'design-buy';
 buyBtn.innerHTML = `<svg class="ig" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg><span class="pedir">Pedir</span><span class="price">${cur}${price.toLocaleString()}</span>`;
 buyBtn.onclick = () => sendOrderToInstagram(
-    buildDesignRecipe(design.nombre || 'Diseño', price, charms.length),
+    () => copyToClipboard(buildDesignRecipe(design.nombre || 'Diseño', price, charms.length)),
     'Copiamos el detalle de tu pedido. Pegalo en el chat de Instagram para pedir este diseño.'
 );
 header.appendChild(titleEl);
@@ -1273,7 +1283,7 @@ if(m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 };
 document.getElementById('btn-clear').onclick = () => {
 if(confirm("¿Limpiar toda la pulsera?")) {
-zone.innerHTML = '<div class="empty-msg" id="empty-text">Pulsera vacía</div>';
+zone.innerHTML = '<div class="empty-msg" id="empty-text"><span>Pulsera vacía</span></div>';
 updateTotal();
 }
 };
@@ -1362,10 +1372,10 @@ function showToast(message, ms = 4500) {
 // Instagram. Instagram no permite pre-cargar texto del DM, por eso el cliente
 // pega lo copiado. El salto a IG ocurre recién al tocar "Ir a Instagram" (gesto
 // propio): así el usuario alcanza a leer las instrucciones antes de cambiar de app.
-let pendingOrderMsg = null;
-function sendOrderToInstagram(msg, instructionText) {
-    pendingOrderMsg = msg;
-    copyToClipboard(msg);
+let pendingCopy = null;
+function sendOrderToInstagram(copyFn, instructionText) {
+    pendingCopy = copyFn;
+    try { copyFn(); } catch (e) {}
     const textEl = document.getElementById('order-modal-text');
     if (textEl) textEl.textContent = instructionText;
     openOrderModal();
@@ -1385,11 +1395,20 @@ window.closeOrderModal = closeOrderModal;
     go.onclick = function() {
         const handle = CONFIG.instagram || 'Satana.IB';
         // Re-copiamos justo antes de saltar, por si el portapapeles cambió.
-        if (pendingOrderMsg) copyToClipboard(pendingOrderMsg);
+        if (pendingCopy) { try { pendingCopy(); } catch (e) {} }
         window.open(`https://ig.me/m/${handle}`, '_blank');
         closeOrderModal();
     };
 })();
+// Copia la IMAGEN (PNG) de un canvas al portapapeles. Patrón compatible con
+// Safari: se pasa un Promise<Blob> al ClipboardItem dentro del gesto del click.
+function copyImageToClipboard(canvas) {
+    if (!canvas || !navigator.clipboard || !window.ClipboardItem) return;
+    try {
+        const blobPromise = new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+        navigator.clipboard.write([new ClipboardItem({ 'image/png': blobPromise })]).catch(() => {});
+    } catch (e) {}
+}
 // Receta para un diseño del catálogo: el nombre es identificador inequívoco
 // (no hacen falta códigos de dije ni imagen adjunta).
 function buildDesignRecipe(nombre, price, count) {
@@ -1400,8 +1419,11 @@ function buildDesignRecipe(nombre, price, count) {
 const btnOrder = document.getElementById('btn-order-instagram');
 if (btnOrder) {
     btnOrder.onclick = function() {
-        const { msg } = buildOrderRecipe();
-        sendOrderToInstagram(msg, 'Copiamos el detalle. Descargá la imagen, pegá el detalle en el chat de Instagram y adjuntala.');
+        // Personalizada: copiamos la imagen de la pulsera para pegarla en el DM.
+        sendOrderToInstagram(
+            () => copyImageToClipboard(currentCanvasRotated),
+            'Copiamos la imagen de tu pulsera. Pegala en el chat de Instagram para pedirla. Si no te deja, usá Descargar y adjuntala.'
+        );
     };
 }
 // ==========================================

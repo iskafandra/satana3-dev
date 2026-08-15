@@ -152,30 +152,34 @@ min-height: 0;
 .workspace-section {
 flex-basis: 35%;
 min-height: 160px;
-background-color: #f2f2f0;
+background-color: #F3ECDF;
 display: flex;
 align-items: center;
 justify-content: center;
 overflow-x: scroll;
-border-bottom: 2px solid #ccc;
+border-bottom: 1px solid #E7DCC9;
 position: relative;
 scroll-behavior: smooth;
 -webkit-overflow-scrolling: touch;
-scrollbar-width: auto;
-scrollbar-color: var(--primary-orange) #e0e0e0;
+scrollbar-width: thin;
+scrollbar-color: #CFC5B2 transparent;
+/* Fundido dinámico en los extremos: se desvanece del lado donde queda pulsera
+   por ver (los anchos --fade-left/right los ajusta updateBraceletFade en JS). */
+-webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-left, 0px), #000 calc(100% - var(--fade-right, 0px)), transparent 100%);
+mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-left, 0px), #000 calc(100% - var(--fade-right, 0px)), transparent 100%);
 }
 .workspace-section::-webkit-scrollbar {
-height: 36px;
-background-color: #e0e0e0;
+height: 18px;
+background-color: transparent;
 }
 .workspace-section::-webkit-scrollbar-track {
-background-color: #e0e0e0;
+background-color: transparent;
 border-radius: 0;
 }
 .workspace-section::-webkit-scrollbar-thumb {
-background-color: var(--primary-orange);
-border-radius: 18px;
-border: 6px solid #e0e0e0;
+background-color: #CFC5B2;
+border-radius: 10px;
+border: 6px solid #F3ECDF;
 background-clip: content-box;
 }
 .workspace-section::before {
@@ -206,14 +210,15 @@ padding: 15px;
 overflow-y: auto;
 }
 .section-title {
-font-size: 0.85rem;
-color: #555;
-margin: 0 0 10px 0;
+font-size: 0.72rem;
+color: #3A332B;
+margin: 0 0 12px 0;
 text-transform: uppercase;
-font-family: sans-serif;
-font-weight: bold;
-border-bottom: 1px solid #d0d0d0;
-padding-bottom: 5px;
+font-family: 'Helvetica Neue', Arial, sans-serif;
+font-weight: 400;
+letter-spacing: 2.2px;
+border-bottom: 1px solid #ECE5D8;
+padding-bottom: 8px;
 }
 .catalog-grid {
 display: grid;
@@ -294,58 +299,62 @@ cursor: default;
 #tab-catalogo.active {
 overflow-y: auto;
 -webkit-overflow-scrolling: touch;
-padding: 18px 16px 28px;
-gap: 24px;
-background-color: #f2f2f0;
+padding: 28px 24px 46px;
+gap: 0;
+background-color: #FBF7F0;
 }
 .design-card {
-background: #fff;
-border-radius: 14px;
-box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 8px 22px rgba(0,0,0,0.10);
-padding: 14px;
+background: transparent;
+border: none;
+border-bottom: 1px solid #ECE5D8;
+border-radius: 0;
+box-shadow: none;
+padding: 30px 2px 34px;
 flex-shrink: 0;
 }
+.design-card:last-child { border-bottom: none; }
 .design-card-header {
 display: flex;
 justify-content: space-between;
 align-items: center;
-margin-bottom: 10px;
+margin-bottom: 20px;
 }
 .design-title {
-font-family: 'Playfair Display', serif;
-font-weight: 700;
-color: var(--text-dark);
-font-size: 1rem;
+font-family: 'Helvetica Neue', Arial, sans-serif;
+font-weight: 400;
+color: #3A332B;
+font-size: 0.8rem;
+text-transform: uppercase;
+letter-spacing: 2.2px;
 }
 .design-buy {
 display: inline-flex;
 align-items: center;
 gap: 6px;
-padding: 6px 11px;
-border: none;
+padding: 6px 12px;
+border: 1px solid rgba(58,51,43,0.26);
 border-radius: 20px;
-background: var(--primary-orange);
-color: #fff;
+background: transparent;
+color: #3A332B;
 font-family: sans-serif;
 cursor: pointer;
 white-space: nowrap;
 line-height: 1;
 flex-shrink: 0;
-box-shadow: 0 1px 4px rgba(215,49,1,0.22);
 }
-.design-buy .ig { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.7; }
+.design-buy .ig { width: 12px; height: 12px; flex-shrink: 0; opacity: 0.55; }
 .design-buy .pedir {
 font-weight: 500;
 font-size: 0.58rem;
 text-transform: uppercase;
 letter-spacing: 0.6px;
-opacity: 0.9;
+opacity: 0.85;
 }
 .design-buy .price {
 font-weight: 500;
 font-size: 0.74rem;
 padding-left: 6px;
-border-left: 1px solid rgba(255,255,255,0.35);
+border-left: 1px solid rgba(58,51,43,0.18);
 }
 .design-buy:active { transform: translateY(1px); }
 .design-strip {
@@ -355,7 +364,7 @@ overflow-x: auto;
 padding: 10px 4px;
 -webkit-overflow-scrolling: touch;
 scrollbar-width: thin;
-scrollbar-color: var(--primary-orange) #eee;
+scrollbar-color: #D8CFBF transparent;
 cursor: grab;
 touch-action: pan-y;
 scroll-behavior: smooth;
@@ -373,11 +382,11 @@ scroll-behavior: auto;
 height: 8px;
 }
 .design-strip::-webkit-scrollbar-track {
-background-color: #eee;
+background-color: transparent;
 border-radius: 4px;
 }
 .design-strip::-webkit-scrollbar-thumb {
-background-color: var(--primary-orange);
+background-color: #D8CFBF;
 border-radius: 4px;
 }
 .design-strip img,
@@ -393,8 +402,8 @@ display: none; /* oculto hasta que haya al menos un dije */
 justify-content: space-between;
 align-items: center;
 padding: 10px 20px;
-background-color: #e0e0dc;
-border-top: 1px solid #ccc;
+background-color: transparent;
+border-top: 1px solid #ECE5D8;
 flex-shrink: 0;
 }
 .total-bar.visible {
@@ -402,27 +411,27 @@ display: flex;
 }
 .total-label {
 font-family: sans-serif;
-font-size: 0.8rem;
-font-weight: bold;
+font-size: 0.72rem;
+font-weight: 600;
 text-transform: uppercase;
-letter-spacing: 0.5px;
-color: #666;
+letter-spacing: 1.5px;
+color: #8A8175;
 }
 .total-amount {
 font-family: sans-serif;
 font-size: 1.3rem;
 font-weight: bold;
-color: var(--primary-orange);
+color: #3A332B;
 white-space: nowrap;
 }
 .footer-actions {
 padding: 12px 20px;
-background-color: #e0e0dc;
+background-color: var(--bg-paper);
 display: flex;
 justify-content: space-between;
 align-items: center;
 gap: 10px;
-border-top: 1px solid #ccc;
+border-top: 1px solid #ECE5D8;
 flex-shrink: 0;
 padding-bottom: max(12px, env(safe-area-inset-bottom));
 margin-bottom: 5px;
@@ -440,13 +449,15 @@ box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 .btn-clear {
 background: transparent;
-color: #c62828;
-border: 1px solid #c62828;
+color: #3A332B;
+border: 1px solid rgba(58,51,43,0.3);
+box-shadow: none;
 }
 .btn-action {
-background: var(--primary-orange);
-color: white;
+background: #3A332B;
+color: var(--bg-paper);
 min-width: 100px;
+box-shadow: none;
 }
 .empty-msg {
 width: 100%;
@@ -682,9 +693,9 @@ cursor:pointer;
     min-width: 120px;
 }
 .vm-btn-primary {
-    background: var(--primary-orange);
-    color: #fff;
-    box-shadow: 0 4px 14px rgba(215,49,1,0.45);
+    background: #F5F0E8;
+    color: #211B14;
+    box-shadow: none;
 }
 .vm-btn-primary svg { width: 18px; height: 18px; flex-shrink: 0; }
 /* --- TOAST --- */
@@ -866,6 +877,7 @@ if(btnShare) btnShare.style.display = 'block';
 initCatalog();
 initDesignsCatalog();
 updateTotal();
+setupBraceletFade();
 setTimeout(() => {
 const loadingOverlay = document.getElementById('loading-overlay');
 if (loadingOverlay) {
@@ -875,6 +887,32 @@ loadingOverlay.style.display = 'none';
 }, 300);
 }
 }, 800);
+}
+// Fundido dinámico en los extremos de la pulsera cuando es más ancha que la
+// pantalla: se desvanece del lado donde queda pulsera por ver.
+function updateBraceletFade() {
+const sc = document.getElementById('scroll-container');
+if (!sc) return;
+const F = 44; // px de fundido
+const max = sc.scrollWidth - sc.clientWidth;
+if (max <= 1) { // la pulsera entra en pantalla: sin fundido
+sc.style.setProperty('--fade-left', '0px');
+sc.style.setProperty('--fade-right', '0px');
+return;
+}
+const x = sc.scrollLeft;
+sc.style.setProperty('--fade-left', (x > 2 ? F : 0) + 'px');
+sc.style.setProperty('--fade-right', (x < max - 2 ? F : 0) + 'px');
+}
+function setupBraceletFade() {
+const sc = document.getElementById('scroll-container');
+if (!sc || sc.dataset.fadeWired) return;
+sc.addEventListener('scroll', () => updateBraceletFade(), { passive: true });
+window.addEventListener('resize', () => updateBraceletFade());
+// Recalcular cuando se agregan/quitan dijes de la pulsera.
+if (zone) new MutationObserver(() => requestAnimationFrame(updateBraceletFade)).observe(zone, { childList: true });
+sc.dataset.fadeWired = '1';
+requestAnimationFrame(updateBraceletFade);
 }
 function initCatalog() {
 if (typeof CHARMS_DB === 'undefined' || !catalogContainer) return;

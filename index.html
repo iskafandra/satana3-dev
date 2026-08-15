@@ -740,15 +740,32 @@ cursor:pointer;
     max-width: 340px;
     padding: 30px 24px 22px;
 }
-.order-modal-icon { font-size: 2rem; margin-bottom: 6px; }
 .order-modal-title {
     font-family: sans-serif; font-weight: 600; font-size: 1.05rem;
-    color: #3A332B; margin-bottom: 10px;
+    color: #3A332B; margin-bottom: 12px;
+}
+.order-modal-img {
+    display: none; /* solo en modo imagen (Personalizada) */
+    max-width: 130px; max-height: 200px;
+    margin: 0 auto 16px; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
 }
 .order-modal-text {
-    font-family: sans-serif; font-size: 0.92rem; line-height: 1.5;
-    color: #6B6255; margin: 0 0 22px; text-align: center;
+    font-family: sans-serif; font-size: 0.9rem; line-height: 1.55;
+    color: #6B6255; margin: 0 0 18px; text-align: center;
 }
+.order-save {
+    display: none; /* solo en modo imagen; JS lo muestra como flex */
+    width: 100%;
+    align-items: center; justify-content: center; gap: 8px;
+    background: transparent; color: #3A332B;
+    border: 1px solid rgba(58,51,43,0.3); border-radius: 26px; padding: 12px;
+    font-family: sans-serif; font-weight: 500; font-size: 0.85rem;
+    text-transform: none; box-shadow: none; cursor: pointer;
+    margin-bottom: 8px;
+}
+.order-save svg { width: 17px; height: 17px; flex-shrink: 0; }
+.order-save:active { transform: translateY(1px); }
 .order-go {
     width: 100%;
     display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -823,12 +840,16 @@ cursor:pointer;
 <div id="order-modal" class="modal-overlay" onclick="if(event.target===this) closeOrderModal()">
   <div class="modal-content order-modal-content">
     <button class="modal-close" onclick="closeOrderModal()">×</button>
-    <div class="order-modal-icon">📋</div>
-    <div class="order-modal-title">¡Tu pedido está copiado!</div>
+    <div class="order-modal-title">Último paso 🖤</div>
+    <img id="order-modal-img" class="order-modal-img" alt="Tu pulsera" />
     <p class="order-modal-text" id="order-modal-text"></p>
+    <button class="order-save" id="order-save">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Guardar imagen
+    </button>
     <button class="order-go" id="order-go">
       <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg>
-      Ir a Instagram
+      Ir al chat de Satana
     </button>
     <button class="order-cancel" onclick="closeOrderModal()">Ahora no</button>
   </div>
@@ -1146,10 +1167,10 @@ const buyBtn = document.createElement('button');
 buyBtn.type = 'button';
 buyBtn.className = 'design-buy';
 buyBtn.innerHTML = `<svg class="ig" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg><span class="pedir">Pedir</span><span class="price">${cur}${price.toLocaleString()}</span>`;
-buyBtn.onclick = () => sendOrderToInstagram(
-    () => copyToClipboard(buildDesignRecipe(design.nombre || 'Diseño', price, charms.length)),
-    'Copiamos el detalle de tu pedido. Pegalo en el chat de Instagram para pedir este diseño.'
-);
+buyBtn.onclick = () => startOrder({
+    copyText: buildDesignRecipe(design.nombre || 'Diseño', price, charms.length),
+    instruction: 'Copiamos el detalle. Entrá al chat de Satana y pegalo para pedir este diseño.'
+});
 header.appendChild(titleEl);
 header.appendChild(buyBtn);
 
@@ -1368,16 +1389,30 @@ function showToast(message, ms = 4500) {
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
-// Copia la receta y muestra un popup con las instrucciones + botón para ir a
-// Instagram. Instagram no permite pre-cargar texto del DM, por eso el cliente
-// pega lo copiado. El salto a IG ocurre recién al tocar "Ir a Instagram" (gesto
-// propio): así el usuario alcanza a leer las instrucciones antes de cambiar de app.
-let pendingCopy = null;
-function sendOrderToInstagram(copyFn, instructionText) {
-    pendingCopy = copyFn;
-    try { copyFn(); } catch (e) {}
+// Muestra el popup del pedido. Instagram no deja enviar imágenes ni texto a un DM
+// de forma automática desde la web, así que el popup guía el paso manual: guardar
+// la imagen (Personalizada) o copiar el detalle (Catálogo) y adjuntarla/pegarlo en
+// el chat de Satana, que abrimos directo con ig.me/m/<handle>.
+let pendingCopy = null;   // Catálogo: copia el detalle en texto
+let pendingImage = null;  // Personalizada: canvas de la pulsera para guardar
+function startOrder(opts) {
+    opts = opts || {};
+    pendingCopy = opts.copyText ? (() => copyToClipboard(opts.copyText)) : null;
+    pendingImage = opts.imageCanvas || null;
+    if (pendingCopy) pendingCopy();
+    const img = document.getElementById('order-modal-img');
+    const saveBtn = document.getElementById('order-save');
+    if (pendingImage) {
+        img.src = pendingImage.toDataURL('image/jpeg', 0.92);
+        img.style.display = 'block';
+        saveBtn.style.display = 'flex';
+    } else {
+        img.removeAttribute('src');
+        img.style.display = 'none';
+        saveBtn.style.display = 'none';
+    }
     const textEl = document.getElementById('order-modal-text');
-    if (textEl) textEl.textContent = instructionText;
+    if (textEl) textEl.textContent = opts.instruction || '';
     openOrderModal();
 }
 function openOrderModal() {
@@ -1389,45 +1424,31 @@ function closeOrderModal() {
     if (m) m.style.display = 'none';
 }
 window.closeOrderModal = closeOrderModal;
+// Guardar imagen: descarga el JPEG de la pulsera (en iOS conviene long-press en la
+// miniatura → "Guardar en Fotos", por eso también mostramos la imagen en el popup).
+(function(){
+    const save = document.getElementById('order-save');
+    if (!save) return;
+    save.onclick = function() {
+        if (!pendingImage) return;
+        const a = document.createElement('a');
+        a.download = 'pulsera-satana.jpg';
+        a.href = pendingImage.toDataURL('image/jpeg', 0.92);
+        a.click();
+    };
+})();
+// Ir al chat de Satana: abre el DM. Si hay texto pendiente (Catálogo), lo re-copia.
 (function(){
     const go = document.getElementById('order-go');
     if (!go) return;
     go.onclick = function() {
         const handle = CONFIG.instagram || 'Satana.IB';
-        // Re-copiamos justo antes de saltar, por si el portapapeles cambió.
         if (pendingCopy) { try { pendingCopy(); } catch (e) {} }
         window.open(`https://ig.me/m/${handle}`, '_blank');
         closeOrderModal();
     };
 })();
-// Construye un File desde un canvas de forma SÍNCRONA (sin toBlob async), para
-// no romper el gesto del click que exige navigator.share en iOS.
-function canvasToFileSync(canvas, type, quality, name) {
-    const dataUrl = canvas.toDataURL(type, quality);
-    const b64 = dataUrl.split(',')[1];
-    const bin = atob(b64);
-    const arr = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-    return new File([arr], name, { type: type });
-}
-// Comparte la imagen de la pulsera con la hoja nativa (el usuario elige Instagram).
-// Devuelve true si se pudo disparar el compartir nativo; false si el dispositivo
-// no lo soporta (ej. desktop) para caer en el fallback de descargar + adjuntar.
-function shareBraceletImage(canvas) {
-    if (!canvas || !navigator.share || !navigator.canShare) return false;
-    let file;
-    try { file = canvasToFileSync(canvas, 'image/jpeg', 0.92, 'pulsera-satana.jpg'); }
-    catch (e) { return false; }
-    if (!navigator.canShare({ files: [file] })) return false;
-    navigator.share({
-        files: [file],
-        title: 'Mi pulsera Satana',
-        text: '¡Hola Satana! 🖤 Quiero pedir esta pulsera.'
-    }).catch(() => {}); // el usuario puede cancelar la hoja: lo ignoramos
-    return true;
-}
-// Receta para un diseño del catálogo: el nombre es identificador inequívoco
-// (no hacen falta códigos de dije ni imagen adjunta).
+// Receta para un diseño del catálogo: el nombre es identificador inequívoco.
 function buildDesignRecipe(nombre, price, count) {
     const cur = CONFIG.currency || '$';
     return `¡Hola Satana! 🖤 Quiero pedir el diseño "${nombre}" (${count} dijes).\n\n` +
@@ -1436,16 +1457,11 @@ function buildDesignRecipe(nombre, price, count) {
 const btnOrder = document.getElementById('btn-order-instagram');
 if (btnOrder) {
     btnOrder.onclick = function() {
-        // Personalizada: intentamos compartir la imagen con la hoja nativa (el
-        // usuario elige Instagram). Instagram no permite pegar imágenes en el DM,
-        // por eso no copiamos: compartimos el archivo directamente.
-        const canvas = currentCanvasRotated || currentCanvas;
-        if (shareBraceletImage(canvas)) return;
-        // Fallback (desktop / sin compartir nativo): descargar + abrir DM + adjuntar.
-        sendOrderToInstagram(
-            () => {},
-            'Descargá la imagen (botón Descargar) y adjuntala en el chat de Instagram para pedir tu pulsera.'
-        );
+        // Personalizada: mostramos la imagen para guardar + abrimos el chat de Satana.
+        startOrder({
+            imageCanvas: currentCanvasRotated || currentCanvas,
+            instruction: '1) Guardá la imagen (o mantenela presionada → Guardar en Fotos). 2) Entrá al chat de Satana. 3) Adjuntala en el chat y ¡listo!'
+        });
     };
 }
 // ==========================================

@@ -723,6 +723,40 @@ cursor:pointer;
     opacity: 1;
     transform: translateX(-50%) translateY(0);
 }
+/* --- MODAL DE PEDIDO --- */
+#order-modal { z-index: 3600; }
+.order-modal-content {
+    border: 1px solid #E7DCC9;
+    max-width: 340px;
+    padding: 30px 24px 22px;
+}
+.order-modal-icon { font-size: 2rem; margin-bottom: 6px; }
+.order-modal-title {
+    font-family: sans-serif; font-weight: 600; font-size: 1.05rem;
+    color: #3A332B; margin-bottom: 10px;
+}
+.order-modal-text {
+    font-family: sans-serif; font-size: 0.92rem; line-height: 1.5;
+    color: #6B6255; margin: 0 0 22px; text-align: center;
+}
+.order-go {
+    width: 100%;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    background: #3A332B; color: var(--bg-paper);
+    border: none; border-radius: 26px; padding: 14px;
+    font-family: sans-serif; font-weight: 600; font-size: 0.9rem;
+    text-transform: none; letter-spacing: 0.2px;
+    box-shadow: none; cursor: pointer;
+}
+.order-go svg { width: 18px; height: 18px; flex-shrink: 0; }
+.order-go:active { transform: translateY(1px); }
+.order-cancel {
+    width: 100%; margin-top: 4px;
+    background: transparent; color: #9A9081; border: none;
+    box-shadow: none; padding: 12px;
+    font-family: sans-serif; font-weight: 500; font-size: 0.82rem;
+    text-transform: none; cursor: pointer;
+}
 /* --- INSTRUCTION MODAL --- */
 #info-modal .modal-content {
     position: relative;
@@ -776,6 +810,19 @@ cursor:pointer;
     </div>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
+<div id="order-modal" class="modal-overlay" onclick="if(event.target===this) closeOrderModal()">
+  <div class="modal-content order-modal-content">
+    <button class="modal-close" onclick="closeOrderModal()">×</button>
+    <div class="order-modal-icon">📋</div>
+    <div class="order-modal-title">¡Tu pedido está copiado!</div>
+    <p class="order-modal-text" id="order-modal-text"></p>
+    <button class="order-go" id="order-go">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg>
+      Ir a Instagram
+    </button>
+    <button class="order-cancel" onclick="closeOrderModal()">Ahora no</button>
+  </div>
+</div>
 <div class="app-container">
 <div class="header">
 <div class="header-branding">
@@ -1091,7 +1138,7 @@ buyBtn.className = 'design-buy';
 buyBtn.innerHTML = `<svg class="ig" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg><span class="pedir">Pedir</span><span class="price">${cur}${price.toLocaleString()}</span>`;
 buyBtn.onclick = () => sendOrderToInstagram(
     buildDesignRecipe(design.nombre || 'Diseño', price, charms.length),
-    '📋 Copiamos tu pedido. Pegalo en el chat de Instagram para pedir este diseño 🖤'
+    'Copiamos el detalle de tu pedido. Pegalo en el chat de Instagram para pedir este diseño.'
 );
 header.appendChild(titleEl);
 header.appendChild(buyBtn);
@@ -1311,15 +1358,38 @@ function showToast(message, ms = 4500) {
     if (toastTimer) clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), ms);
 }
-// Copia la receta y abre el DM. Instagram no permite pre-cargar texto del DM,
-// por eso el cliente pega lo copiado en el chat. Se abre dentro del gesto del
-// click para evitar el bloqueo de pop-ups.
-function sendOrderToInstagram(msg, toastMsg) {
-    const handle = CONFIG.instagram || 'Satana.IB';
+// Copia la receta y muestra un popup con las instrucciones + botón para ir a
+// Instagram. Instagram no permite pre-cargar texto del DM, por eso el cliente
+// pega lo copiado. El salto a IG ocurre recién al tocar "Ir a Instagram" (gesto
+// propio): así el usuario alcanza a leer las instrucciones antes de cambiar de app.
+let pendingOrderMsg = null;
+function sendOrderToInstagram(msg, instructionText) {
+    pendingOrderMsg = msg;
     copyToClipboard(msg);
-    showToast(toastMsg, 6000);
-    window.open(`https://ig.me/m/${handle}`, '_blank');
+    const textEl = document.getElementById('order-modal-text');
+    if (textEl) textEl.textContent = instructionText;
+    openOrderModal();
 }
+function openOrderModal() {
+    const m = document.getElementById('order-modal');
+    if (m) m.style.display = 'flex';
+}
+function closeOrderModal() {
+    const m = document.getElementById('order-modal');
+    if (m) m.style.display = 'none';
+}
+window.closeOrderModal = closeOrderModal;
+(function(){
+    const go = document.getElementById('order-go');
+    if (!go) return;
+    go.onclick = function() {
+        const handle = CONFIG.instagram || 'Satana.IB';
+        // Re-copiamos justo antes de saltar, por si el portapapeles cambió.
+        if (pendingOrderMsg) copyToClipboard(pendingOrderMsg);
+        window.open(`https://ig.me/m/${handle}`, '_blank');
+        closeOrderModal();
+    };
+})();
 // Receta para un diseño del catálogo: el nombre es identificador inequívoco
 // (no hacen falta códigos de dije ni imagen adjunta).
 function buildDesignRecipe(nombre, price, count) {
@@ -1331,7 +1401,7 @@ const btnOrder = document.getElementById('btn-order-instagram');
 if (btnOrder) {
     btnOrder.onclick = function() {
         const { msg } = buildOrderRecipe();
-        sendOrderToInstagram(msg, '📋 Copiamos tu pedido. Pegalo en el chat de Instagram y adjuntá la imagen que descargaste 🖤');
+        sendOrderToInstagram(msg, 'Copiamos el detalle. Descargá la imagen, pegá el detalle en el chat de Instagram y adjuntala.');
     };
 }
 // ==========================================

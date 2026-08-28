@@ -109,7 +109,7 @@ letter-spacing: 3.5px;
 margin: 0;
 text-transform: uppercase;
 color: #FFFFFF;
-opacity: 0.92;
+opacity: 1;
 font-weight: 400;
 -webkit-font-smoothing: antialiased;
 }
@@ -124,18 +124,20 @@ white-space: nowrap;
 margin: 0 10px;
 }
 .info-btn {
-width: 30px;
-height: 30px;
+width: 40px;
+height: 40px;
 border-radius: 50%;
 border: 2px solid white;
 background: transparent;
 color: white;
 font-weight: bold;
+font-size: 1rem;
 cursor: pointer;
 display: flex;
 align-items: center;
 justify-content: center;
 padding: 0;
+flex-shrink: 0;
 }
 /* --- TABS --- */
 .tabs-bar {
@@ -154,7 +156,7 @@ font-weight: 500;
 font-size: 0.72rem;
 letter-spacing: 1.6px;
 text-transform: uppercase;
-color: #A79E8E;
+color: #6E6656;
 background: transparent;
 border: none;
 border-bottom: 2px solid transparent;
@@ -384,8 +386,8 @@ letter-spacing: 2.2px;
 display: inline-flex;
 align-items: center;
 gap: 6px;
-padding: 6px 12px;
-border: 1px solid rgba(58,51,43,0.26);
+padding: 9px 14px;
+border: 1px solid rgba(58,51,43,0.4);
 border-radius: 20px;
 background: transparent;
 color: #3A332B;
@@ -468,7 +470,7 @@ font-size: 0.66rem;
 font-weight: 500;
 text-transform: uppercase;
 letter-spacing: 2.2px;
-color: #A79E8E;
+color: #6E6656;
 }
 .total-amount {
 font-family: var(--font-ui);
@@ -529,7 +531,7 @@ position: relative;
 z-index: 3;
 background: #F3ECDF; /* = fondo de la zona: tapa la línea del alambre */
 padding: 4px 18px;
-color: #B3A994;
+color: #7A7160;
 font-family: var(--font-ui);
 font-weight: 400;
 font-size: 0.72rem;
@@ -564,7 +566,7 @@ font-family: var(--font-ui);
 font-size: 0.68rem;
 letter-spacing: 3px;
 text-transform: uppercase;
-color: #B3A994;
+color: #7A7160;
 margin-bottom: 24px;
 }
 .loading-bar {
@@ -625,11 +627,17 @@ position:relative;
 }
 .modal-close {
 position:absolute;
-top:10px;
-right:10px;
+top:6px;
+right:6px;
+width:44px;
+height:44px;
+display:flex;
+align-items:center;
+justify-content:center;
 border:none;
 background:none;
 font-size:1.5rem;
+line-height:1;
 cursor:pointer;
 }
 /* --- FULLSCREEN VIEW MODAL (REORGANIZADO 3 COLUMNAS) --- */
@@ -827,8 +835,9 @@ cursor:pointer;
     background: transparent;
     color: #F3B7A6;
     border: none;
-    padding: 4px 2px;
-    margin: 0;
+    padding: 8px 6px;
+    margin: -4px 0;
+    min-height: 40px;
     font-family: var(--font-ui);
     font-weight: 700;
     font-size: 0.82rem;

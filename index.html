@@ -514,7 +514,7 @@ top: 0;
 left: 0;
 width: 100%;
 height: 100%;
-background-color: rgba(255, 248, 240, 0.9);
+background-color: #FBF7F0;
 display: flex;
 flex-direction: column;
 justify-content: center;
@@ -522,26 +522,48 @@ align-items: center;
 z-index: 1000;
 opacity: 1;
 visibility: visible;
-transition: opacity 0.3s ease, visibility 0.3s ease;
+transition: opacity 0.4s ease, visibility 0.4s ease;
 }
-.loading-spinner {
-width: 50px;
-height: 50px;
-border: 5px solid #f3f3f3;
-border-top: 5px solid var(--primary-orange);
-border-radius: 50%;
-animation: spin 1s linear infinite;
-margin-bottom: 20px;
+.loading-logo {
+width: 132px;
+height: auto;
+margin-bottom: 14px;
+animation: breathe 1.8s ease-in-out infinite;
+}
+.loading-sub {
+font-family: 'Helvetica Neue', Arial, sans-serif;
+font-size: 0.68rem;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: #B3A994;
+margin-bottom: 24px;
+}
+.loading-bar {
+width: 120px;
+height: 2px;
+background: #EAE0CF;
+border-radius: 2px;
+overflow: hidden;
+}
+.loading-bar span {
+display: block;
+height: 100%;
+width: 40%;
+background: var(--primary-orange);
+border-radius: 2px;
+animation: loadSlide 1.15s ease-in-out infinite;
+}
+@keyframes breathe {
+0%, 100% { opacity: 0.55; transform: scale(0.98); }
+50% { opacity: 1; transform: scale(1); }
+}
+@keyframes loadSlide {
+0% { transform: translateX(-110%); }
+100% { transform: translateX(320%); }
 }
 @keyframes spin {
 0% { transform: rotate(0deg); }
 100% { transform: rotate(360deg); }
-}
-.loading-text {
-font-family: 'Playfair Display', serif;
-color: var(--primary-orange);
-font-size: 1.2rem;
-text-align: center;
 }
 .loading-hidden {
 opacity: 0;
@@ -848,9 +870,11 @@ cursor:pointer;
 </head>
 <body>
 <div id="loading-overlay" class="loading-overlay">
-  <div class="loading-spinner"></div>
-  <div class="loading-text">Cargando aplicación...</div>
+  <img id="loading-logo" class="loading-logo" alt="Satana" />
+  <div class="loading-sub">Italian Bracelets</div>
+  <div class="loading-bar"><span></span></div>
 </div>
+<script>try{ if(typeof CONFIG!=='undefined' && CONFIG.LOGO){ document.getElementById('loading-logo').src = CONFIG.LOGO; } }catch(e){}</script>
 <div id="info-modal" class="modal-overlay">
 <div class="modal-content">
 <button class="modal-close" onclick="toggleModal()">×</button>
@@ -1354,11 +1378,14 @@ const logoSize = 60;
 ctx.drawImage(logoImg, (canvas.width/2) - (logoSize/2), textY - 70, logoSize, logoSize);
 }
 }
-ctx.fillStyle = "#333";
-ctx.font = "300 24px Helvetica Neue, Helvetica, sans-serif";
+ctx.fillStyle = "#3A332B";
+ctx.font = '300 24px "Helvetica Neue", Helvetica, Arial, sans-serif';
+try { ctx.letterSpacing = "4px"; } catch (e) {}
 ctx.fillText("ITALIAN BRACELETS", canvas.width/2, textY + 30);
+try { ctx.letterSpacing = "0px"; } catch (e) {}
 const priceText = totalPriceDisplay ? totalPriceDisplay.innerText : "$0";
-ctx.fillText(`Total: ${priceText}`, canvas.width/2, canvas.height - 40);
+ctx.font = 'bold 24px "Helvetica Neue", Helvetica, Arial, sans-serif';
+ctx.fillText(`Total  ${priceText}`, canvas.width/2, canvas.height - 40);
 return canvas;
 }
 // --- ROTAR CANVAS 90° (para visualización vertical) ---
@@ -1400,9 +1427,11 @@ ctx.drawImage(img, x + (w - img.width * r)/2, y + (h - img.height * r)/2, img.wi
 // --- LÓGICA DEL MODAL DE VISUALIZACIÓN ---
 function openViewModal(canvas) {
     currentCanvas = canvas;
-    currentCanvasRotated = rotateCanvas90Degrees(canvas);
+    // La pulsera se muestra horizontal (orientación natural): sin rotar, así los
+    // dijes y los textos quedan derechos y legibles.
+    currentCanvasRotated = canvas;
     const img = document.getElementById('view-img');
-    img.src = currentCanvasRotated.toDataURL('image/jpeg', 0.9);
+    img.src = canvas.toDataURL('image/jpeg', 0.9);
     const modal = document.getElementById('view-modal');
     modal.style.display = 'flex';
     setTimeout(() => modal.classList.add('active'), 10);

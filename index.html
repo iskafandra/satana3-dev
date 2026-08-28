@@ -27,11 +27,16 @@
 <script src="config.js"></script>
 <script src="charms.js"></script>
 <script src="designs.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+<script src="sortable.min.js"></script>
 <style>
+/* --- FUENTE (self-host, variable, subset latin) --- */
+@font-face {
+font-family: 'Space Grotesk';
+font-style: normal;
+font-weight: 300 700;
+font-display: swap;
+src: url('fonts/space-grotesk.woff2') format('woff2');
+}
 /* --- ESTILOS GENERALES --- */
 :root {
 --primary-orange: #d73101;

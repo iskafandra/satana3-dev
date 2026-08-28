@@ -696,11 +696,14 @@ cursor:pointer;
 }
 .vm-btn:disabled { opacity: 0.5; cursor: default; }
 .vm-btn-secondary {
-    flex: 0 0 auto;
+    flex: 1;
     background: transparent;
     color: #fff;
     border: 1.5px solid rgba(255,255,255,0.55);
-    min-width: 120px;
+}
+.vm-btn-full {
+    flex: 0 0 auto;
+    width: 100%;
 }
 .vm-btn-primary {
     background: #F5F0E8;
@@ -826,14 +829,14 @@ cursor:pointer;
         <img id="view-img" class="view-modal-img" src="" alt="Vista previa pulsera">
     </div>
     <div class="view-modal-footer">
-        <p class="vm-hint">Descargá la imagen y pedila por DM &mdash; copiamos el detalle de tu pulsera 🖤</p>
         <div class="vm-actions">
             <button id="btn-download-from-header" class="vm-btn vm-btn-secondary">Descargar</button>
-            <button id="btn-order-instagram" class="vm-btn vm-btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg>
-                Pedir por Instagram
-            </button>
+            <button id="btn-share-modal" class="vm-btn vm-btn-secondary">Compartir</button>
         </div>
+        <button id="btn-order-instagram" class="vm-btn vm-btn-primary vm-btn-full">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><circle cx="17.4" cy="6.6" r="1.4" fill="currentColor"/></svg>
+            Pedir por Instagram
+        </button>
     </div>
 </div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -890,10 +893,7 @@ cursor:pointer;
 </div>
 <div class="footer-actions">
 <button class="btn-clear" id="btn-clear">Limpiar</button>
-<div style="display:flex; gap:8px;">
-<button class="btn-action" id="btn-share" style="display:none; background:#1e88e5;">Compartir</button>
 <button class="btn-action" id="btn-view">Visualizar</button>
-</div>
 </div>
 </div>
 
@@ -948,9 +948,10 @@ filter: '.empty-msg',
 onEnd: updateTotal
 });
 }
-if (navigator.share) {
-const btnShare = document.getElementById('btn-share');
-if(btnShare) btnShare.style.display = 'block';
+// Compartir solo tiene sentido con Web Share (móvil): en desktop lo ocultamos.
+if (!navigator.share) {
+const btnShareModal = document.getElementById('btn-share-modal');
+if(btnShareModal) btnShareModal.style.display = 'none';
 }
 initCatalog();
 initDesignsCatalog();
@@ -1467,41 +1468,33 @@ if (btnOrder) {
 // ==========================================
 // 📤 BOTÓN COMPARTIR
 // ==========================================
-const btnShare = document.getElementById('btn-share');
-if(btnShare) {
-btnShare.onclick = async function() {
-const btn = this;
-const oldText = btn.innerText;
-btn.innerText = "...";
-btn.disabled = true;
-try {
-    const canvas = await generateCanvas();
-    if(canvas) {
-        const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-        if (blob) {
-            const file = new File([blob], "diseño_pulsera.jpg", { type: "image/jpeg" });
-            if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                try {
-                    await navigator.share({
-                        files: [file],
-                        title: CONFIG.brandName || 'Mi Diseño',
-                        text: '¡Mira la pulsera que diseñé!'
-                    });
-                } catch(shareErr) {
-                    console.log("Acción de compartir cancelada o falló:", shareErr);
-                }
-            } else {
-                alert("Tu dispositivo no soporta compartir directamente. Usa Visualizar y luego Guarda.");
-            }
-        }
+// Compartir (dentro de la Vista Previa): comparte la imagen ya generada con la
+// hoja nativa. El archivo se arma de forma SÍNCRONA para no romper el gesto que
+// exige navigator.share en iOS.
+const btnShareModal = document.getElementById('btn-share-modal');
+if (btnShareModal) {
+btnShareModal.onclick = function() {
+    const canvas = currentCanvasRotated || currentCanvas;
+    if (!canvas) return;
+    let file;
+    try {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        const bin = atob(dataUrl.split(',')[1]);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        file = new File([arr], 'pulsera-satana.jpg', { type: 'image/jpeg' });
+    } catch (e) { return; }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({
+            files: [file],
+            title: CONFIG.brandName || 'Satana',
+            text: '¡Mirá mi pulsera Satana! 🖤'
+        }).catch(() => {});
+    } else if (navigator.share) {
+        navigator.share({ title: CONFIG.brandName || 'Satana', text: '¡Mirá mi pulsera Satana! 🖤' }).catch(() => {});
+    } else {
+        alert('Tu dispositivo no permite compartir directamente. Usá Descargar.');
     }
-} catch(err) {
-    console.error("Error crítico en share:", err);
-    alert("Error al compartir. Por favor, inténtalo de nuevo.");
-} finally {
-    btn.innerText = oldText;
-    btn.disabled = false;
-}
 };
 }
 // Ajustes responsive

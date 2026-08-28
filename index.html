@@ -265,10 +265,35 @@ animation: slideIn 0.3s ease-out;
     transform: translateY(0);
   }
 }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 .sortable-ghost {
 opacity: 0.4;
 transform: scale(0.95);
 }
+/* --- MICROINTERACCIONES --- */
+.tab-content.active { animation: fadeIn 0.28s ease; }
+.charm-source { transition: transform 0.12s ease, filter 0.12s ease; }
+.btn-action, .btn-clear, .design-buy, .vm-btn, .order-go, .order-save { transition: transform 0.1s ease, background-color 0.15s ease, border-color 0.15s ease; }
+.btn-action:active, .btn-clear:active, .info-btn:active { transform: translateY(1px); }
+@media (hover: hover) and (pointer: fine) {
+  .charm-source:hover { transform: translateY(-2px) scale(1.03); filter: drop-shadow(0 5px 10px rgba(0,0,0,0.2)); }
+  .charm-wrapper:hover { filter: drop-shadow(1px 3px 7px rgba(0,0,0,0.32)); }
+  .design-buy:hover { background: rgba(58,51,43,0.06); }
+  .btn-action:hover { background: #4a4034; }
+  .btn-clear:hover { background: rgba(58,51,43,0.05); }
+  .tab-btn:hover:not(.active) { color: #666; }
+  .info-btn:hover { background: rgba(255,255,255,0.16); }
+  .design-cta:hover, .order-go:hover { filter: brightness(1.08); }
+  .vm-btn-secondary:hover { background: rgba(255,255,255,0.10); }
+  .vm-btn-primary:hover { filter: brightness(0.97); }
+}
+/* --- FOCO VISIBLE (teclado) --- */
+:focus-visible { outline: 2px solid var(--primary-orange); outline-offset: 2px; }
+.header :focus-visible, .info-btn:focus-visible { outline-color: #fff; }
+.view-modal-overlay :focus-visible { outline-color: #fff; }
 .charm-img-layer {
 position: absolute;
 z-index: 1;
@@ -891,7 +916,7 @@ cursor:pointer;
 </div>
 </div>
 <div style="display:flex; align-items:center;">
-<button class="info-btn" onclick="toggleModal()">i</button>
+<button class="info-btn" onclick="toggleModal()" aria-label="Cómo pedir / instrucciones">i</button>
 </div>
 </div>
 
@@ -1027,8 +1052,14 @@ const img = document.createElement('img');
 img.src = charm.src;
 img.className = 'charm-source';
 img.loading = "lazy";
+img.alt = 'Dije ' + (charm.nombre || '');
+img.setAttribute('role', 'button');
+img.tabIndex = 0;
+img.setAttribute('aria-label', 'Agregar dije ' + (charm.nombre || ''));
 const isSpecial = (index === 0);
-img.onclick = () => addCharm(charm, isSpecial);
+const add = () => addCharm(charm, isSpecial);
+img.onclick = add;
+img.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); add(); } };
 fragment.appendChild(img);
 });
 catalogContainer.appendChild(fragment);

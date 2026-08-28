@@ -830,7 +830,6 @@ cursor:pointer;
     </div>
     <div class="view-modal-footer">
         <div class="vm-actions">
-            <button id="btn-download-from-header" class="vm-btn vm-btn-secondary">Descargar</button>
             <button id="btn-share-modal" class="vm-btn vm-btn-secondary">Compartir</button>
         </div>
         <button id="btn-order-instagram" class="vm-btn vm-btn-primary vm-btn-full">
@@ -1329,14 +1328,6 @@ alert("Error al procesar el diseño. Por favor, inténtalo de nuevo.");
     btn.innerText = oldText;
     btn.disabled = false;
 }
-};
-// Descargar desde header
-document.getElementById('btn-download-from-header').onclick = function() {
-    if(!currentCanvas) return;
-    const link = document.createElement('a');
-    link.download = `Diseño_${Date.now()}.jpg`;
-    link.href = currentCanvas.toDataURL('image/jpeg', 0.9);
-    link.click();
 };
 // ==========================================
 // 📩 PEDIR POR INSTAGRAM

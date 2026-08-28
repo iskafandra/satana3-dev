@@ -459,6 +459,11 @@ color: var(--bg-paper);
 min-width: 100px;
 box-shadow: none;
 }
+.btn-clear:disabled, .btn-action:disabled {
+opacity: 0.35;
+cursor: default;
+pointer-events: none;
+}
 .empty-msg {
 width: 100%;
 text-align: center;
@@ -730,11 +735,32 @@ cursor:pointer;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease, transform 0.25s ease;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
 }
 .toast.show {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+.toast-msg { flex: 1; text-align: left; }
+.toast-action {
+    flex-shrink: 0;
+    background: transparent;
+    color: #F3B7A6;
+    border: none;
+    padding: 4px 2px;
+    margin: 0;
+    font-family: sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: none;
+    border-radius: 0;
 }
 /* --- MODAL DE PEDIDO --- */
 #order-modal { z-index: 3600; }
@@ -944,7 +970,7 @@ new Sortable(zone, {
 animation: 150,
 ghostClass: 'sortable-ghost',
 filter: '.empty-msg',
-onEnd: updateTotal
+onEnd: () => { updateTotal(); saveBracelet(); }
 });
 }
 // Compartir solo tiene sentido con Web Share (móvil): en desktop lo ocultamos.
@@ -954,6 +980,7 @@ if(btnShareModal) btnShareModal.style.display = 'none';
 }
 initCatalog();
 initDesignsCatalog();
+restoreBracelet();
 updateTotal();
 setupBraceletFade();
 setTimeout(() => {
@@ -1006,38 +1033,88 @@ fragment.appendChild(img);
 });
 catalogContainer.appendChild(fragment);
 }
-function addCharm(charmObj, isSpecialType) {
-const emptyText = document.getElementById('empty-text');
-if(emptyText) emptyText.style.display = 'none';
+// Busca un dije del CHARMS_DB por su código (nombre). Se usa para restaurar
+// desde localStorage y para deshacer eliminaciones.
+function findCharmByCode(code) {
+if (typeof CHARMS_DB === 'undefined') return null;
+return CHARMS_DB.find(c => String(c.nombre) === String(code)) || null;
+}
+// Crea el eslabón (charm-wrapper) con su imagen, marco y acción de eliminar.
+function createCharmWrapper(charmObj, isSpecialType) {
 const wrapper = document.createElement('div');
 wrapper.className = 'charm-wrapper';
-const thisPrice = isSpecialType ? getEmptyPrice() : CONFIG.charmPrice;
-wrapper.dataset.price = thisPrice;
+wrapper.dataset.price = isSpecialType ? getEmptyPrice() : CONFIG.charmPrice;
 wrapper.dataset.name = (charmObj && charmObj.nombre != null) ? String(charmObj.nombre) : '';
 if (isSpecialType) wrapper.dataset.type = "special";
 const safeFrames = (typeof FRAMES !== 'undefined') ? FRAMES : { DEFAULT: '', FIRST: '' };
 let frameUrl = safeFrames.DEFAULT;
 if (isSpecialType && safeFrames.FIRST) frameUrl = safeFrames.FIRST;
-wrapper.innerHTML = `<img src="${charmObj.src}" class="charm-img-layer"><div class="frame-layer" style="background-image: url('${frameUrl}')"></div>`;
-wrapper.onclick = function() {
-if(confirm("¿Eliminar este adorno?")) {
-this.style.opacity = '0';
-this.style.transform = 'scale(0.8)';
-setTimeout(() => {
-this.remove();
-updateTotal();
-checkEmpty();
-}, 150);
+wrapper.innerHTML = `<img src="${charmObj.src}" class="charm-img-layer" alt="Dije ${wrapper.dataset.name}"><div class="frame-layer" style="background-image: url('${frameUrl}')"></div>`;
+wrapper.setAttribute('role', 'button');
+wrapper.setAttribute('aria-label', 'Quitar dije ' + wrapper.dataset.name);
+wrapper.title = 'Tocá para quitar';
+wrapper.onclick = function() { removeCharm(wrapper); };
+return wrapper;
 }
-};
+function addCharm(charmObj, isSpecialType) {
+const emptyText = document.getElementById('empty-text');
+if(emptyText) emptyText.style.display = 'none';
+const wrapper = createCharmWrapper(charmObj, isSpecialType);
 zone.appendChild(wrapper);
 updateTotal();
+saveBracelet();
 setTimeout(() => {
 const scroller = document.getElementById('scroll-container');
 if(scroller) {
 scroller.scrollTo({ left: scroller.scrollWidth, behavior: 'smooth' });
 }
 }, 50);
+}
+// Quita un dije con animación y ofrece "Deshacer" (lo reinserta en su posición).
+function removeCharm(wrapper) {
+const code = wrapper.dataset.name;
+const special = wrapper.dataset.type === 'special';
+const index = Array.from(zone.querySelectorAll('.charm-wrapper')).indexOf(wrapper);
+wrapper.style.opacity = '0';
+wrapper.style.transform = 'scale(0.8)';
+setTimeout(() => {
+wrapper.remove();
+updateTotal();
+checkEmpty();
+saveBracelet();
+}, 150);
+showToast('Dije quitado', { actionText: 'Deshacer', onAction: () => {
+const charm = findCharmByCode(code);
+if (!charm) return;
+const emptyText = document.getElementById('empty-text');
+if (emptyText) emptyText.style.display = 'none';
+const w = createCharmWrapper(charm, special);
+const cur = zone.querySelectorAll('.charm-wrapper');
+if (index >= cur.length || index < 0) zone.appendChild(w);
+else zone.insertBefore(w, cur[index]);
+updateTotal();
+saveBracelet();
+}});
+}
+// --- Persistencia de la pulsera (sobrevive recargas) ---
+function saveBracelet() {
+try {
+const arr = Array.from(zone.querySelectorAll('.charm-wrapper'))
+.map(w => ({ c: w.dataset.name, s: w.dataset.type === 'special' }));
+localStorage.setItem('satana_bracelet', JSON.stringify(arr));
+} catch (e) {}
+}
+function restoreBracelet() {
+let arr = [];
+try { arr = JSON.parse(localStorage.getItem('satana_bracelet') || '[]'); } catch (e) { arr = []; }
+if (!Array.isArray(arr) || !arr.length) return;
+const emptyText = document.getElementById('empty-text');
+if (emptyText) emptyText.style.display = 'none';
+arr.forEach(item => {
+const charm = findCharmByCode(item && item.c);
+if (charm) zone.appendChild(createCharmWrapper(charm, !!(item && item.s)));
+});
+updateTotal();
 }
 function checkEmpty() {
 const count = zone.querySelectorAll('.charm-wrapper').length;
@@ -1058,6 +1135,12 @@ totalPriceDisplay.innerText = `${CONFIG.currency}${total.toLocaleString()}`;
 // El total solo se muestra si hay al menos un dije en la pulsera.
 const totalBar = document.getElementById('total-bar');
 if(totalBar) totalBar.classList.toggle('visible', wrappers.length > 0);
+// Visualizar / Limpiar no tienen sentido con la pulsera vacía.
+const empty = wrappers.length === 0;
+const bView = document.getElementById('btn-view');
+const bClear = document.getElementById('btn-clear');
+if(bView) bView.disabled = empty;
+if(bClear) bClear.disabled = empty;
 }
 // ==========================================
 // 🗂️ PESTAÑAS
@@ -1303,10 +1386,23 @@ const m = document.getElementById('info-modal');
 if(m) m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
 };
 document.getElementById('btn-clear').onclick = () => {
-if(confirm("¿Limpiar toda la pulsera?")) {
+const wrappers = Array.from(zone.querySelectorAll('.charm-wrapper'));
+if(!wrappers.length) return;
+// Snapshot para poder deshacer el vaciado completo.
+const snapshot = wrappers.map(w => ({ c: w.dataset.name, s: w.dataset.type === 'special' }));
 zone.innerHTML = '<div class="empty-msg" id="empty-text"><span>Pulsera vacía</span></div>';
 updateTotal();
-}
+saveBracelet();
+showToast('Pulsera vaciada', { actionText: 'Deshacer', onAction: () => {
+const emptyText = document.getElementById('empty-text');
+if(emptyText) emptyText.style.display = 'none';
+snapshot.forEach(item => {
+const charm = findCharmByCode(item.c);
+if(charm) zone.appendChild(createCharmWrapper(charm, item.s));
+});
+updateTotal();
+saveBracelet();
+}});
 };
 // ==========================================
 // 👁️ BOTÓN VISUALIZAR
@@ -1373,13 +1469,27 @@ function fallbackCopy(text) {
     } catch (e) { /* sin portapapeles: seguimos igual */ }
 }
 let toastTimer = null;
-function showToast(message, ms = 4500) {
+// showToast(mensaje) o showToast(mensaje, { actionText, onAction, duration })
+function showToast(message, opts) {
     const t = document.getElementById('toast');
     if (!t) return;
-    t.textContent = message;
+    if (typeof opts === 'number') opts = { duration: opts };
+    opts = opts || {};
+    t.innerHTML = '';
+    const span = document.createElement('span');
+    span.className = 'toast-msg';
+    span.textContent = message;
+    t.appendChild(span);
+    if (opts.actionText && typeof opts.onAction === 'function') {
+        const btn = document.createElement('button');
+        btn.className = 'toast-action';
+        btn.textContent = opts.actionText;
+        btn.onclick = () => { try { opts.onAction(); } catch (e) {} t.classList.remove('show'); };
+        t.appendChild(btn);
+    }
     t.classList.add('show');
     if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), ms);
+    toastTimer = setTimeout(() => t.classList.remove('show'), opts.duration || 4500);
 }
 // Muestra el popup del pedido. Instagram no deja enviar imágenes ni texto a un DM
 // de forma automática desde la web, así que el popup guía el paso manual: guardar

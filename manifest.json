@@ -1,0 +1,20 @@
+{
+  "name": "Satana! Italian Bracelets",
+  "short_name": "Satana!",
+  "description": "Armá tu pulsera italiana personalizada y pedila por Instagram.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FBF7F0",
+  "theme_color": "#d73101",
+  "icons": [
+    {
+      "src": "logo.jpg",
+      "sizes": "615x615",
+      "type": "image/jpeg",
+      "purpose": "any"
+    }
+  ]
+}
